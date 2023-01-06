@@ -1,0 +1,247 @@
+---
+title: "Gráficos con ggplot2 ( )"
+author: "Bryan Quispe"
+format: 
+  html:
+    code-line-numbers: true
+    code-fold: false
+    html-math-method: katex
+    dpi: 600
+    smooth-scroll: true
+    code-overflow: scroll
+    code-block-bg: true
+    code-block-border-left: "#5000ef"
+    linkcolor: "#5000ef"
+    search: true
+    language: esp
+    toc-location: left
+    toc-depth: 3
+date: "12/03/2022 07:21"
+date-format: full
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: true
+toc: true
+number-sections: true
+highlight-style: tango
+toc-title: "Tabla de Contenidos"
+---
+
+```{r setup,include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(openair)
+library(ggrepel)
+library(openxlsx)
+library(ggpubr)
+```
+
+# Graficos usando ggplot2 ( )
+
+Se mostrará los distintos gráficos que pueden realizarse desde el paquete ggplot2.
+
+## geom_area ( )
+
+```{r message=FALSE, warning=FALSE}
+# Usando el Stat= "count"; haciendo eso resulta conteos
+airquality %>% ggplot(aes(x= Temp))+
+  geom_area(stat = "count", fill="aquamarine", alpha=0.6)+
+  theme_bw()
+
+airquality %>% ggplot(aes(x=Temp))+
+  geom_area(stat = "bin",fill="aquamarine",alpha=0.6,
+            lty=3, lwd=1.5, color="blue")+
+  theme_bw()
+```
+
+## geom_frecpoly ( )
+
+```{r message=FALSE, warning=FALSE}
+airquality %>% ggplot(aes(x=Temp))+
+  geom_freqpoly(color="orange", lwd=1.1, lty=2, alpha=0.6)+
+  theme_dark()
+```
+
+## geom_density ( )
+
+```{r message=FALSE, warning=FALSE}
+airquality %>% ggplot(aes(x=Temp))+
+  geom_density(fill="coral", alpha=0.5, color="darkblue",
+               lty=4,lwd=1.1)+ theme_classic()
+```
+
+## geom_histogram( )
+
+```{r message=FALSE, warning=FALSE}
+airquality %>% ggplot(aes(x=Temp))+
+  geom_histogram(bins = 20, color="red", fill="gray80",
+                 lty=3, lwd=1.1)+theme_bw()
+```
+
+## stat_qq_line y stat_qq( )
+
+```{r message=FALSE, warning=FALSE}
+ggplot(data=airquality,aes(sample=Temp))+
+  stat_qq_line(color="darkblue",
+               lwd=1.1)+ stat_qq(color= "red", size=3, alpha=0.2)+
+  theme_bw()
+```
+
+## geom_bar ( )
+
+```{r message=FALSE, warning=FALSE}
+ggplot(data=airquality, aes(x=Month))+
+  geom_bar(fill="deepskyblue",stat = "count", alpha=0.4)
+```
+
+## geom_label ( )
+
+```{r message=FALSE, warning=FALSE}
+s <- msleep %>% ggplot(aes(x=sleep_total,y=sleep_rem))
+
+s + geom_label(aes(label=vore, fill=vore), alpha=0.25)+
+  geom_point(color="red")
+```
+
+## geom_text ( )
+
+```{r message=FALSE, warning=FALSE}
+s +geom_text(aes(label=vore))+ geom_point(color="red")
+```
+
+## geom_label_repel ( )
+
+```{r message=FALSE, warning=FALSE}
+s + geom_label_repel(aes(label=vore, fill=vore), alpha=0.6) +
+  geom_point(color="red")
+```
+
+## geom_text_repel ( )
+
+```{r message=FALSE, warning=FALSE}
+s + geom_text_repel(aes(label=vore, color=vore)) + 
+  geom_point(color="red")
+```
+
+## geom_jitter ( )
+
+```{r warning=FALSE, message=FALSE}
+
+d <- storms %>% ggplot(aes(x=wind, y=pressure))
+
+d + geom_point(color="blue")
+
+d + geom_jitter(aes(color=category),
+                width = 6, height = 6,
+                alpha=0.4)
+```
+
+## geom_hex ( )
+
+```{r message=FALSE, warning=FALSE}
+d + geom_hex(aes(fill=category),
+             color="gray40")
+```
+
+## geom_density2d ( )
+
+```{r message=FALSE, warning=FALSE}
+d + geom_density2d()
+```
+
+## stat_density_2d ( )
+
+```{r message=FALSE, warning=FALSE}
+d + stat_density_2d(aes(fill=..density..),
+                    geom = "raster",
+                    contour = FALSE) + 
+  scale_fill_distiller(palette = "Spectral",
+                       direction = -1)
+```
+
+## stat_boxplot ( )
+
+```{r message=FALSE, warning=FALSE}
+
+airquality %>% 
+  ggplot()+ 
+  stat_boxplot(geom="errorbar",
+                         width=0.2,
+                         aes(x=factor(Month),
+                             y=Ozone,
+                             fill=Month)) +
+  geom_boxplot(aes(x=factor(Month),
+                             y=Ozone),
+               fill="deepskyblue")
+
+iris %>% ggplot(aes(x=Species,y=Sepal.Width)) +
+   stat_boxplot(geom = "errorbar", width=0.2) +
+                  geom_boxplot(aes(fill=Species))
+
+
+iris %>% ggplot(aes(x=Species, y=Sepal.Width, alpha=0.3)) +
+  geom_violin(aes(fill=Species))+ geom_boxplot(aes(color=Species))+
+  geom_jitter(aes(color=Species), size=4)+
+  theme_bw()
+```
+
+## geom_count ( )
+
+```{r warning=FALSE, message=FALSE}
+midwest %>% ggplot(aes(x=category,y=state, color=state))+
+  geom_point()
+
+midwest %>% ggplot(aes(x=category,y=state, color=state))+
+  geom_jitter()
+
+midwest %>% ggplot(aes(x=category,y=state, color=state))+
+  geom_count()+ scale_size_area(max_size = 10)
+```
+
+## geom_tile ( )
+
+```{r}
+# Usando una base de datos de práctica:
+
+xde <- openxlsx::read.xlsx("BD2.xlsx")
+
+head(xde, n = 5)
+
+xde %>% ggplot()+
+  geom_tile(aes(x=factor(Var2),y=Var1,fill=score))+
+  scale_fill_gradient(low = "white",high="darkcyan")
+
+xde %>% ggplot()+
+  geom_tile(aes(x=factor(Var2),y=Var1,fill=score))+
+  scale_fill_gradient2(low = "blue",high="red",
+                       midpoint = 15,
+                       mid="whitesmoke")
+
+```
+
+## geom_smooth ( )
+
+```{r warning=FALSE, message=FALSE}
+bio <- openxlsx::read.xlsx("Datos_bio.xlsx")
+
+# Regresión lineal simple
+bio %>% ggplot(aes(x=carbono,y=humedad1))+
+  scale_x_continuous(breaks = seq(0,380000,50000))+
+  geom_point(color="darkcyan", size=4, alpha=0.25) + 
+  geom_smooth(method = "lm",se=TRUE, fill="aquamarine",
+              color="red") + 
+  theme_bw()
+
+# Regresión lineal cúbica
+bio %>% ggplot(aes(x=carbono,y=humedad1))+
+  scale_x_continuous(breaks = seq(0,380000,50000))+
+  geom_smooth(method = "lm",
+              se=FALSE,formula = y~x+poly(x,2),
+              color="red", lwd=1.2, lty=2)+
+  geom_point(color="purple", size=3, alpha=0.25) + 
+  theme_minimal()
+
+```
