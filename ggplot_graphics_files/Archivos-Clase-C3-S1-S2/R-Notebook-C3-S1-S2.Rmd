@@ -1,0 +1,655 @@
+---
+title: "Gráficos Avanzados con ggplot2 C3-S1-S2"
+Subtitle: 'P.C.E. Data Science: Estadística y Análisis de Datos en R'
+Author: "Irwing S. Saldaña"
+output: html_document
+editor_options:
+  chunk_output_type: console
+---
+
+Instalar librerías nuevas
+
+```{r eval=FALSE}
+install.packages("hexbin")
+install.packages("viridis")
+install.packages("ggthemes")
+install.packages("ggrepel")
+install.packages("ggThemeAssist")
+
+#install.packages("datarium")
+#install.packages("car")
+#install.packages("effsize")
+```
+
+Librerías a usar
+
+```{r warning=FALSE, message=FALSE}
+library(tidyverse)
+library(ggrepel)
+
+# Ejecutar este código para tener un tema predeterminado todos en clase
+theme_set(theme_bw())
+```
+
+# **1. Primeros pasos con ggplot2**
+
+La "**gg**" de ggplot deriva de gramática de gráficos. Es uno de las estructuras de lenguaje de programación más completas para generar gráficos, permitiéndote modificar cada detalle de un gráfico. Poder comunicar bien implica sintetizar la información, y presentarla gráficamente de manera adecuada es una habilidad necesaria en la investigación científica. En este R Notebook aprenderás a usar ggplot2 para sacarle el máximo provecho a la visualización de información en tus investigaciones.
+
+Si solo colocas la base de datos dentro de `ggplot()`, entonces solo se creará un lienzo vacío.
+
+```{r}
+# Carga la base de datos anthropometry.xlsx y asignale el nombre antropo
+antropo <- openxlsx::read.xlsx("anthropometry.xlsx")
+antropo <- openxlsx::read.xlsx(choose.files())
+
+antropo <- na.omit(antropo)
+
+# Coloquemos la base de datos dentro de ggplot
+# para crear el lienzo vacío
+
+
+```
+
+Ahora, comencemos usando `aes()` para definir con qué columnas de la base de datos vamos a trabajar.
+
+```{r}
+# Creemos el lienzo con ejes X e Y definidos
+# con las variables "tamaño de pie" y "altura"
+
+
+```
+
+# **2. Geoms: X continua**
+
+-   Gráfico de Área
+
+-   Gráfico de Polígono de Frecuencia
+
+-   Gráfico de Densidades de Probabilidades
+
+-   Histograma de Frecuencia
+
+-   Q-Q Plot
+
+Usemos la base de datos `antropo` para continuar trabajando con la variable `x=foot_length`.
+
+```{r}
+# Gráfico de Área (red, coral)
+
+
+
+# Gráfico de Polígono de frecuencia (blue)
+
+
+
+# Gráfico de Densidad de Probabilidades (red, coral)
+
+
+
+# Histograma de Frecuencia (darkgreen, lightgreen)
+
+
+
+```
+
+**Ya que finalmente trabajamos con geométricas, hay dos cosas más debes saber:**
+
+1.  También puedes colocar `aes()` dentro de una geométrica. Usemos el aes() ya creado en la instrucción.
+
+```{r}
+# Coloca aes() dentro de geom_histogram()
+# aes(x=foot_length, fill=gender, color=gender)
+
+antropo %>% 
+  ggplot()+
+  geom_histogram(bindwith=5, alpha=0.5)
+
+# Coloca parcialmente aes() dentro de geom_histogram()
+antropo %>% 
+  ggplot()+
+  geom_histogram(bindwith=5, alpha=0.5)
+
+# Cuando se pone el aes() dentro de la geométrica, a veces 
+# es útil colocar la data dentro de la geométrica también
+ggplot()+
+  geom_histogram(bindwith=5, alpha=0.5)
+```
+
+2.  Puedes guardar un gráfico en el ambiente como si fuera un objeto más.
+
+```{r}
+# Crea el objeto A conteniendo al lienzo vacío de ggplot
+A <- antropo %>% ggplot(aes(x=foot_length))
+A
+
+# Adiciona a A un geom_histogram()
+A + 
+
+# Adiciona a A un geom_density()
+A + 
+```
+
+**El caso especial de los gráficos Cuantil-Cuantil (Q-Q Plots):**
+
+> **Nota:** ggplot solo acepta como argumento `data =` a una base de datos de estructura `data.frame` o `tibble`, no listas, no vectores, no matrices.
+
+```{r}
+# Qué sucede si le adicionamos a A los geom para Q-Q Plots
+A + geom_qq() + geom_qq_line()
+
+# extrae los residuales y grafíca el Q-Q Plot de los residuales
+# para ver si cumplen con el criterio de normalidad.
+mod1 <- ...
+XYZ <- ...
+
+# Genera el Q-Q Plot
+# ¿Ven normalidad?
+
+
+
+# Recomendación: No se fien de los test, vean las gráficas
+nortest::ad.test(resid(mod1))
+moments::kurtosis(resid(mod1))
+moments::skewness(resid(mod1))
+performance::check_model(mod1)
+```
+
+# **3. Geoms: X discreta**
+
+-   Gráfico de barras
+
+Como variable discreta tomaremos aquella que presenta niveles, aquellas que podemos considerar de tipo factor (ya sea binario, o de más niveles), y aquellas variables de conteo.
+
+**A partir de Tablas de Frecuencia:**
+
+```{r}
+# Carga la base de datos msleep y eliminemos las filas con valores perdidos
+data("msleep")
+msleep <- na.omit(msleep)
+msleep2 <- msleep %>% count(vore, conservation)
+
+# children es una tabla de frecuencias
+# crea una gráfica de barras con ella
+
+```
+
+**A partir de una Tabla corriente (R cuenta las observaciones de un nivel por nosotros):**
+
+```{r}
+# Crea un gráfico de barras para la variable gender
+# filtrando las observaciones con talla mayor a 170 cm
+# en la base de datos antropo 
+antropo170 <- antropo %>% filter(height>170)
+
+
+```
+
+Algunas veces lidiaremos con la necesidad de **convertir en una variable categórica una que inicialmente es continua (mediciones) o discreta (conteos)**. Para ello se usa las funciones de dplyr y la función condicional `ifelse()`:
+
+```{r}
+# Crear un gráfico de barras con geom_bar para columna age
+antropo %>% 
+  ggplot(aes(x=age))+
+  geom_bar()
+
+# Crear una columna llamada age2 para corregir este 
+
+
+table(antropo$age2)
+
+B <- ...
+
+```
+
+Trabajaremos con las posiciones de las barras:
+
+-   stack = barras apiladas.
+
+-   dodge = barras dispuestas lateralmente.
+
+-   fill = barras convertidas a porcentaje (o proporción en realidad).
+
+```{r}
+# Cambia las posiciones de las barras
+B + ...
+B + ...
+B + ...
+```
+
+# **4. Geoms: X continua, Y continua**
+
+-   Gráfico de Dispersión de Puntos (Scatterplot)
+
+-   Gráfico de etiquetas reemplazando los puntos
+
+-   Gráfico de texto reemplazando los puntos
+
+-   Gráfico de Dispersión de Puntos con método Jitter
+
+-   Gráfico de calor hexagonal
+
+-   Gráfico de Contornos de Densidad de Puntos (y variaciones)
+
+**Este grupo encierra a los típicos gráficos de dispersión de puntos.**
+
+```{r}
+# Crea un gráfico de dispersión de puntos (Scatterplot)
+# con la base de datos msleep
+data("msleep")
+names(msleep)
+
+
+# Reemplacemos los puntos por etiquetas
+
+
+
+# Reemplacemos los puntos por texto
+
+
+
+# Usemos ggrepel para menorar el gráfico
+
+
+
+```
+
+**Jittering un conjunto de puntos,** significa dispersar aleatoriamente los puntos para que se vea mejor la nube de puntos. Su uso se recomienda cuando se quiere evitar que el "patrón" extraño que aparece en los puntos distraiga al observador de lo que la tendencia de la nube quiere comunicar. En otros casos, cuando los puntos están superpuestos y se necesita observar todos los puntos (Puntos sobre boxplot, por ejemplo).
+
+Trabajaremos con la base de datos `storms`.
+
+```{r}
+# Generar gráfico de dispersión de puntos
+# con la base de datos storms
+data("storms")
+names(storms)
+
+
+
+
+```
+
+Trabajaremos con la base de datos `antropo`.
+
+```{r}
+# Gráfico de calor hexagonal
+DENS <- antropo %>% 
+  ggplot(aes(x=foot_length, y=height))
+
+DENS + geom_hex()
+
+# Gráfico de contornos de densidad de puntos
+DENS + geom_density2d()
+
+# Gráfico de contornos de densidad de puntos
+# con la generación de poligonos de densidad (color="yellow")
+DENS + stat_density_2d(aes(fill=..level..), geom="polygon")
+
+# Gráfico de rásters de densidad de dispersión de puntos. Adiciona:
+# scale_fill_distiller(palette="Spectral", direction=-1)
+DENS + stat_density_2d(aes(fill=..density..), geom="raster", contour=FALSE)
+
+```
+
+# **5. Geoms: X discreta, Y continua**
+
+-   Boxplot
+
+-   Barras de error
+
+-   Gráfico de Violín
+
+Apliquemos estas geométricas a la base de datos CO2
+
+```{r}
+# Carga la base de datos masslost
+mass <- openxlsx::read.xlsx("masslost.xlsx")
+mass <- openxlsx::read.xlsx(choose.files())
+
+# Genera un boxplot para la variable masslost 
+# usando como factor de separación a variety
+# stat_boxplot(geom = 'errorbar', width=0.2) para poner los "bigotes"
+  
+
+# Ahora usa el factor de separación profile y rellenado por variety
+
+
+# Crea un gráfico de violín para la variable uptake usando como 
+# factor de separación a Type (#1f77b4, #5fcbf5, black, #5fcbf5)
+
+
+
+```
+
+# **6. Geoms: X discreta, Y discreta**
+
+-   Gráfico de conteos
+
+Trabajemos con la base de datos midwest de la librería ggplot2.
+
+```{r}
+# Cargas la base de datos midwest
+data("midwest")
+View(midwest)
+
+# Veamos qué sucede con geom_point() y
+# geom_jitter() para visualizar las columnas
+# cty y class
+midwest %>% 
+  ggplot(aes(x=category, y=state, color=state)) + ...
+
+
+# Crea el gráfico de conteos
+midwest %>% 
+  ggplot(aes(x=category, y=state, color=state))+ ...
+```
+
+# **7. Geoms: tres variables**
+
+```{r}
+# Carga la base de datos BD2.xlsx 
+# scale_fill_gradient(low = "white", high = "orangered") para dar color
+bd <- openxlsx::read.xlsx("BD2.xlsx")
+bd <- openxlsx::read.xlsx(choose.files())
+
+```
+
+# **8. Líneas y regresiones**
+
+Usaremos la base de datos `Datos_bio.xlsx` para graficar las relaciones entre las columnas `humedad1` y `humedad2`.
+
+```{r}
+# Crea el objeto P que contenga un gráfico de dispersión
+# de puntos entre las variables humedad1 y humedad2
+bio <- openxlsx::read.xlsx("Datos_bio.xlsx")
+P <- bio %>% 
+  ggplot(aes(x=carbono, y=humedad1))+
+  scale_x_continuous(breaks=seq(0,380000,50000))+
+  geom_point()
+
+# Adiciona a P una regresión lineal simple
+P + ...
+
+# Adiciona a P una regresión lineal cuadrática
+P + ...
+
+# Adiciona a P una regresión lineal cúbica
+P + ...
+
+# Adiciona a P una regresión generalizada aditiva (no lineal)
+P + ...
+
+# Generar una regresión generalizada lineal (GLM) binomial
+# Pero se necesita una gráfica binaria de dispersión de puntos.
+# Créala con el enfrentamiento de biomasa vs bin
+
+
+
+# Adicionar lineas en mis gráficos
+# Vertical (80000)
+P + ...
+
+# Horizontal (600)
+P + ...
+
+# Regresión (Abline)
+
+
+
+# Segmento (p1: 385534.359, 803.14  p2: 1612.323, 255.85)
+P + ...
+
+# Curva
+P + ...
+
+
+# Flecha
+P + ...
+
+```
+
+# **9. Modificar escalas continuas (ejes)**
+
+```{r}
+# Cambiar el sentido del eje x
+P
+P+scale_x_reverse()
+
+# Cambiar el sentido del eje y
+P+scale_y_reverse()
+
+# Transformar escalas cuando hay observaciones muy dispares
+bio %>% ggplot(aes(x=especies, y=DBH))+geom_bar(stat="identity")
+
+
+# Definir limites en los ejes
+
+P + ...
+
+# Usar scale_x_continuous() y scale_y_continuous()
+P + ...
+
+# Usar labels = como argumento para coercionar las etiquetas
+# a dólar, porcentaje, valores absolutos
+P + ...
+P + ...
+P + ...
+```
+
+# **10. Modificar escalas discretas (ejes)**
+
+Crearemos un objeto llamado F que contenga un boxplot con la base de datos `bd` usando las columnas `especies` y `carbono`.
+
+```{r}
+# Crea el boxplot F
+F <- bio %>% ggplot(aes(x=especies, y=carbono))+ geom_boxplot()
+
+# Cambiar el nombre de nivel en el eje x 
+F + ...
+
+# Abreviar todos los niveles del eje x 
+F + ...
+
+# Limitar el gráfico a las especies A. smithii y A. tamarugo
+F + ...
+```
+
+# **11. Colores y rellenos discretos**
+
+Usaremos de ejemplo un boxplot para modificar a gusto los colores
+
+```{r}
+# Rellenar y colorear el boxplot con el mismo tono para todos
+# los niveles de la variable discreta del eje x (orangered, coral)
+bio %>% 
+  ggplot(aes(x=especies, y=carbono))+ ...
+ 
+
+# Creemos dos boxplots, uno listo para rellena (fill)
+# y el otro listo para colorear (color)
+COL <- bio %>% 
+  ggplot(aes(x=especies, y=carbono, color=...))+ 
+  geom_boxplot()
+
+FILL <- bio %>% 
+  ggplot(aes(x=especies, y=carbono, fill=...))+ 
+  geom_boxplot()
+
+# Aplicar rellenado y coloreado con paletas discretas
+FILL + ...
+COL + ...
+
+# Aplicar rellenado y coloreado utilizando paletas discretas de ggthemes
+COL + ...
+
+# Aplicar rellenado y coloreado utilizando paletas en escala de grises
+COL + ...
+FILL + ...
+
+# Aplicar rellenado con colores hexadecimales especificados 
+# manualmente: #8e00ed, #00baed
+FILL + ...
+```
+
+# **12. Colores y rellenos continuos**
+
+Utilicemos la base de datos `storms` para crear un un gráfico de calor hexagonal con las columnas `wind` y `pressure`.
+
+```{r}
+# Crea el gráfico de calor hexagonal
+H <- antropo %>% 
+  ggplot(aes(x=foot_length, y=height))+
+  geom_hex()
+
+# Rellenar con gradientes predefinidos
+# (Crear la paleta para scale_fill_gradient()):
+paleta <- c("#0D0887FF","#7E03A8FF","#CC4678FF","#F89441FF")
+H + ...
+H + ...
+H + ...
+
+# Rellenar con gradientes definiendo color mínimo y máximo (red, blue)
+H +  ...
+
+# Rellenar con gradientes definiendo color 
+# mínimo, medio y máximo (red, white, blue)
+H +  ...
+```
+
+# **13. Formas de puntos y líneas**
+
+La "gg" de ggplot deriva de gramática de gráficos. Es uno de las estructuras de lenguaje de programación más
+
+```{r}
+# Carga la base de datos msleep
+data("msleep")
+msleep <- msleep %>% filter(!is.na(vore))
+
+# Genera un gráfico de dispersión de puntos
+# condicionando el tipo de punto por la columna vore
+msleep %>%
+  ...
+
+# Filtra los valores NA de vore, y guarda el gráfico en el ambiente
+# define el color con vore
+E <-  msleep %>% 
+  ggplot(aes(x=sleep_total, y=sleep_rem, shape=vore, color=vore))+
+  geom_point()
+E
+
+# Usa la función de cambio manual de forma de punto
+E + ...
+E + ...
+
+# Carga la base de datos masslost
+lineas <- openxlsx::read.xlsx("lines.xlsx")
+lineas <- openxlsx::read.xlsx(choose.files())
+
+# Genera un gráfico de líneas con diferente forma de línea 
+# en relación a las categorías de la columna z
+lineas %>% ...
+
+```
+
+# **14. Rotaciones y Facetas**
+
+```{r}
+# Reto Crea un boxplot como el mostrado en la diapositiva 97
+data("iris")
+G <- iris %>% 
+  gather(key=variables, value=valores, 1:4) %>% 
+  ggplot(aes(x=variables, y=valores, fill=Species, color=Species))+
+  geom_boxplot()+
+  scale_x_discrete(labels=abbreviate)+
+  scale_fill_brewer(palette="PuOr")+
+  scale_color_manual(values=c("#d43500", "#333333", "#27008a"))
+
+# Gira el gráfico anterior
+G + ...
+
+# Divide el gráfico mediante la columna Species
+G + ...
+
+# Crea un nuevo objeto en el ambiente
+# almacenando un gráfico de dispersión de puntos
+# con las base de datos gapminder:
+library(dslabs)
+data("gapminder")
+
+gapminder$ferticateg <- cut(gapminder$fertility,
+                           breaks=c(-Inf,2,4,6,8,10,Inf), 
+                           labels=c("<2","2-4","4,6","6-8",">8"))
+
+gapminder<-na.omit(gapminder)
+
+H <- gapminder %>% 
+  ggplot(aes(x=infant_mortality, y=life_expectancy, color=continent))+
+  geom_point()
+
+# Facetas con facet_grid(): usa tipo.suelo, regiones, especies
+H + ...
+H + ...
+H + ...
+H + ...
+
+# Facetas con facet_wrap() 
+H + ...
+H + ...
+```
+
+# **15. Etiquetas del Gráfico**
+
+```{r}
+# Usemos el gráfico de boxplot generado en la sección anterior
+# y adicionemos todas las etiquetas posibles para ver en qué
+# partes del gráfico aparecen escritas
+G
+
+J <- G + ...
+
+
+```
+
+**Trabajar con ggThemeAssist**
+
+```{r}
+library(ggThemeAssist)
+J
+```
+
+# **16. Todopoderoso `theme()`**
+
+Todo se puede editar con `theme()`, desde el grosor de los guiones que figuran en el eje x, hasta el fondo del gráfico, la posición de la leyenda, etc. `theme()` tiene **al menos 88 argumentos** con los que puedes editar el gráfico a detalle.
+
+**Funciones modificadoras de elementos**
+
+Cada argumento acepta una función que lo modifique. Esta función debe ser del tipo específico que requiere el argumento:
+
+-   Si el argumento modifica **texto**, la función modificadora que acepta sería `element_text()`.
+
+-   Si el argumento modifica **cajas**, la función modificadora que acepta sería `element_rect()`
+
+-   Si el argumento modifica **líneas**, la función modificadora que acepta sería `element_line()`
+
+-   Si deseas desaparecer lo que modifica dicho argumento, la función modificadora que acepta sería `element_blank()`. La excepción es la posición de la leyenda, para eliminarla debes colocar no la funión `element_blank()`, sino simplemente `"none"`.
+
+```{r}
+J + 
+  theme(...)
+```
+
+# **17. Temas predefinidos**
+
+Usa tanto temas de `ggplot2` como de `ggthemes`.
+
+```{r}
+library(ggplot2)
+library(ggthemes)
+
+J + theme_bw()
+J + theme_classic()
+J + theme_test()
+J + theme_fivethirtyeight()
+J + theme_stata()
+
+# theme_set(theme_bw())
+```

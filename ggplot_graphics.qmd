@@ -31,11 +31,12 @@ toc-title: "Tabla de Contenidos"
 
 ```{r setup,include=FALSE}
 
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 library(tidyverse)
 library(openair)
 library(ggrepel)
 library(openxlsx)
+library(ggthemes)
 library(ggpubr)
 ```
 
@@ -57,7 +58,7 @@ airquality %>% ggplot(aes(x=Temp))+
   theme_bw()
 ```
 
-## geom_frecpoly ( )
+## geom_freqpoly ( )
 
 ```{r message=FALSE, warning=FALSE}
 airquality %>% ggplot(aes(x=Temp))+
@@ -86,8 +87,8 @@ airquality %>% ggplot(aes(x=Temp))+
 ```{r message=FALSE, warning=FALSE}
 ggplot(data=airquality,aes(sample=Temp))+
   stat_qq_line(color="darkblue",
-               lwd=1.1)+ stat_qq(color= "red", size=3, alpha=0.2)+
-  theme_bw()
+               lwd=1.1)+ stat_qq(color= "red", lwd=3,
+                                 alpha=0.2)+ theme_bw()
 ```
 
 ## geom_bar ( )
@@ -244,4 +245,516 @@ bio %>% ggplot(aes(x=carbono,y=humedad1))+
   geom_point(color="purple", size=3, alpha=0.25) + 
   theme_minimal()
 
+# Regresión generalizada aditiva(no lineal)
+
+bio %>% ggplot(aes(x=carbono,y=humedad1))+
+  scale_x_continuous(breaks = seq(0,380000,50000))+
+  geom_smooth(method = "gam",
+              se=FALSE,color="darkgreen", 
+              lwd=1.2, lty=2)+
+  geom_point(color="skyblue", size=3, alpha=0.25) + 
+  theme_minimal()
+
+bio %>% ggplot(aes(x=carbono,y=humedad1))+
+  scale_x_continuous(breaks = seq(0,380000,50000))+
+  geom_smooth(method = "loess",
+              se=FALSE,color="red", 
+              lwd=1.2, lty=2)+
+  geom_point(color="coral", size=3, alpha=0.25) + 
+  theme_minimal()
+
+# Regresión lineal generalizada lineal(GLM), de tipo binomial
+
+bio %>% ggplot(aes(x=biomasa,y=bin))+
+  scale_y_continuous(breaks = seq(0,1,1))+
+  geom_smooth(method = "glm",
+              se=TRUE,color="red", 
+              lwd=1.2, lty=2, fill="gray80",
+              method.args=list(family=binomial))+
+  geom_point(color="coral", size=3, alpha=0.25)+
+  theme_minimal()
 ```
+
+## geom_vline(), geom_hline()
+
+```{r}
+P <- bio %>% ggplot(aes(x=carbono,y=humedad1))+
+  scale_x_continuous(breaks = seq(0,380000,50000))+
+  geom_smooth(method = "loess",
+              se=FALSE,color="red", 
+              lwd=1.2, lty=2)+
+  geom_point(color="coral", size=3, alpha=0.25) + 
+  theme_minimal()
+
+# geom_vline()
+P + geom_vline(xintercept = 200000, color="skyblue", lwd=0.8)
+# geom_hline()
+P + geom_hline(yintercept = 600,lwd=0.9, color="green") + 
+  geom_text(data=data.frame(x=200000,y=580, lab="humbral"),
+            aes(x=x,y=y, label=lab),color="blue")
+#geom_abline()
+coeff <- lm(humedad1~carbono, data=bio) %>% coef()
+P + geom_abline(intercept = coeff[1], slope = coeff[2], color="darkblue", lwd=0.9)
+```
+
+## geom_abline()
+
+```{r}
+#geom_abline()
+coeff <- lm(humedad1~carbono, data=bio) %>% coef()
+P + geom_abline(intercept = coeff[1], slope = coeff[2], color="deepskyblue", lwd=0.9)
+```
+
+## geom_segment()
+
+```{r}
+P + geom_segment(x=385534.359, y=803.14, xend=1612.323, yend=255.85,
+                 color="hotpink",lwd=0.9)
+```
+
+## geom_curve()
+
+```{r}
+# curva
+P + geom_curve(x=385534.359,
+               y=803.14, xend=1612.323, yend=255.85,
+               curvature=0.25,color="aquamarine",
+               lwd=0.9)
+# flecha
+P + geom_curve(x=385534.359, y=803.14,
+               xend=1612.323, yend=255.85,
+               curvature=0.25,
+               arrow = arrow(length = unit(0.8,"cm")),
+               color="purple",lwd=0.9)
+
+```
+
+## scale_x_reverse()
+Permite cambiar el sentido del eje x para que los valores del eje incrementen de derecha a izquierda.
+
+```{r}
+P + scale_x_reverse()
+```
+
+## scale_y_reverse()
+Permite cambiar el sentido de los valores del eje "y" haciendo que los valores incrementen de desde el extremo más alejado del eje, hacia el origen.
+
+```{r}
+P + scale_y_reverse()
+```
+
+## scale_y_log10()
+Transformación de los valores del eje "y", muy util a la hora de comparar observaciones con valores muy diferentes.
+
+```{r}
+bio %>% ggplot(aes(x= especies, y= DBH))+
+  geom_bar(stat = "identity")
+
+# Luego de transformar:
+bio %>% ggplot(aes(x= especies, y= DBH))+
+  geom_bar(stat = "identity") +
+  scale_y_log10()
+
+bio %>% ggplot(aes(x= especies, y= DBH))+
+  geom_bar(stat = "identity")+
+  scale_y_sqrt()
+```
+
+## ylim() y xlim()
+Permite visualizar solo los valores de un intervalo propuesto.
+
+```{r}
+P + xlim(0,10000)+ylim(200,600)
+# Programando para que los datos del eje salgan en sentido inverso:
+P + ylim(2000,500)
+```
+
+## scale_x_continuous() y scale_y_continuous()
+
+```{r}
+P + scale_x_continuous(breaks = seq(0,450000,30000)) + 
+  scale_y_continuous(limits = c(250,800),
+                     breaks = seq(100,1000,100),
+                     expand = c(0,0,0,0))
+#### Expand permite controlar los márgenes de gráfico
+#### expand=c(y,x,y2,x2)
+bio %>% ggplot(aes(x=especies, y=DBH)) +
+  geom_bar(stat = "identity") + 
+  scale_y_continuous(expand = c(0,0,0.5,0))
+
+# Coerción de etiquetas del eje x:
+P + scale_x_continuous(labels = scales::comma)
+P + scale_x_continuous(labels = scales::percent)
+P + scale_x_continuous(labels = scales::label_percent(scale=2))
+P + scale_x_continuous(labels = scales::dollar)
+P + scale_x_continuous(labels = scales::scientific)
+# valor absoluto
+P + scale_x_continuous(labels = abs)
+
+# Con esta función se puede colocar un segundo eje:
+ggplot()+
+  geom_bar(data = bio, aes(x=especies, y= DBH),
+           stat = "identity",color="green") + 
+  geom_bar(data = bio, aes(x=especies, y=humedad1),
+           stat = "identity",fill="red", alpha=0.25) +
+  scale_y_continuous(sec.axis = sec_axis(~.,name = "humedad1"))
+
+
+bio %>% ggplot() + 
+  geom_smooth(aes(x=carbono,y=humedad1),color="red",fill="orange") +
+  geom_point(aes(x=carbono,y=humedad1),color="hotpink") +
+  geom_smooth(aes(x=carbono,y=biomasa/10),color="blue",fill="deepskyblue")+
+  geom_point(aes(x=carbono,y=biomasa/10), color= "purple") +
+  scale_y_continuous(sec.axis = sec_axis(~.*10, name="bio")) +
+  theme_bw()
+```
+
+## Gráfico de tornado
+```{r}
+
+set.seed(123)
+n1 <- abs(rnorm(10)) + 0.1
+prob <- n1/sum(n1)
+
+data1 <- data.frame(job_type=sample(LETTERS[1:10],1000, replace=T,prob=prob),
+                    gender=sample(c("male","female"), 1000, replace=T))
+
+# tabulando
+
+datax <- data1 %>% group_by(job_type,gender) %>% 
+  summarise(frec=n()) %>% mutate(frec=if_else(gender=="male",-frec,frec))
+
+tdf <- datax %>% filter(gender=="female") %>% arrange(frec)
+order <- tdf$job_type
+
+tdf <- tdf %>% mutate(prop=round(frec/404,digits = 2))
+
+datax %>% ggplot(aes(x=job_type,y=frec,group=gender,fill=gender))+
+  geom_bar(stat = "identity",width = 0.95)+
+  coord_flip() + scale_x_discrete(limits=order) +
+  scale_y_continuous(breaks = seq(-150,150,50),
+                     labels = abs(seq(-150,150,50))) +
+  geom_label(data = datax, aes(x=job_type,y=frec,
+                 label=scales::percent(frec,scale = 0.05)),
+             fill="gray90",alpha=0.7,size=3.25)
+  
+```
+
+## scale_x_dicrete() y scale_y_discrete()
+
+```{r}
+F <- bio %>% ggplot(aes(x=especies,y=carbono, fill=especies))+
+  geom_boxplot()
+
+F + scale_x_discrete(labels=c("A. smithii"="AS",
+                              "A. tamarugo"="AT",
+                              "B. myrtifolia"="BM",
+                              "C. fraseri"="CF",
+                              "E. botryoides"="EB",
+                              "E. maculata"="EMA",
+                              "E. pilularis"="EP"))
+# Forma de abreviado sencilla:
+
+F + scale_x_discrete(labels=abbreviate(names.arg = unique(bio$especies),
+                                       minlength = 4))
+```
+
+## scale_fill_brewer() y scale_color_brewer()
+
+```{r}
+N <- bio %>% 
+  ggplot(aes(x=especies,y=carbono,fill=especies))+
+  geom_boxplot()
+
+G <- bio %>% 
+  ggplot(aes(x=especies,y=carbono,color=especies))+
+  geom_boxplot()
+
+# Aplicando el rellenado y coloreado de figuras con colores brewer:
+### RColorBrewer::brewer.pal.info
+
+N + scale_fill_brewer(palette = "Dark2")
+G + scale_color_brewer(palette = "Accent")
+```
+
+## scale_fill_color_tableau() y scale_color_tableau()
+Requiere la librería `ggthemes()`
+
+```{r}
+N + scale_fill_tableau(palette="Summer")
+G + scale_color_tableau(palette="Winter")
+```
+
+## scale_color_grey() y scale_fill_grey()
+
+```{r}
+G + scale_color_grey()
+N + scale_fill_grey()
+N + scale_fill_grey(start = 0.35, end = 0.8)
+```
+
+## scale_fill_manual()
+```{r}
+N + scale_fill_manual(values = c("#f0bc00","#b2b6f5","#1c3080",
+                                          "#361757","#461757",
+                                          "#690f42","#165e0c"))
+```
+
+## scale_fill_gradientn()
+
+```{r}
+antropo <- read.xlsx("anthropometry.xlsx")
+H <- antropo %>% ggplot(aes(x=foot_length, y=height)) + 
+  geom_hex()
+
+# Creamos una paleta:
+paleta <- c("#0D0887FF","#7E03A8FF","#CC4678FF",
+                       "#F89441FF")
+                       
+H + scale_fill_gradientn(colours = viridisLite::cividis(10))
+H + scale_fill_gradientn(colors = viridisLite::inferno(10))
+H + scale_fill_gradientn(colors = viridisLite::magma(10))
+H + scale_fill_gradientn(colors = viridisLite::plasma(10))
+H + scale_fill_gradientn(colors = heat.colors(10))
+H + scale_fill_gradientn(colors = paleta)
+H + scale_fill_gradientn(colors = c("#f0bc00","#b2b6f5","#1c3080",
+                                    "#361757","#461757"))
+H + scale_fill_gradientn(colours=topo.colors(7),
+                         breaks=c(1,2,600))
+
+```
+
+## scale_fill_gradient()
+```{r}
+H + scale_fill_gradient(low = "red",high = "yellow")
+H + scale_fill_gradient(low = "blue",high = "lightgreen")
+```
+
+## scale_fill_gradient2()
+```{r}
+H + scale_fill_gradient2(low = "darkgreen", mid = "gray80",
+                         high = "lightyellow",midpoint = 30)
+  
+```
+
+## Formas de puntos y lineas (argumento shape)
+
+### scale_shape_manual()
+```{r}
+msleep <- msleep %>% filter(!is.na(vore))
+
+M <- msleep %>% ggplot() + 
+            geom_point(aes(x=sleep_total,y=sleep_rem,
+                           shape=vore,color=vore),
+                       size=3,alpha=0.7)
+
+M + geom_smooth(aes(x=sleep_total,y=sleep_rem,
+                    lty=vore,color=vore),lwd=1,method = "lm",
+                se=FALSE)
+
+M + scale_shape_manual(values = c(3,6,15,20)) + 
+  scale_color_brewer(palette = "Dark2")
+```
+
+## scale_type_manual()
+
+```{r}
+linea <- read.xlsx("lines.xlsx")
+
+Z <- linea %>% ggplot()+
+  geom_line(aes(x=conc.enzima,y=actividad,
+                color=z,lty=z),lwd=1.3) +
+  scale_x_continuous(breaks = seq(0,80,10))
+
+
+Z + scale_linetype_manual(values = c(3,5))
+```
+
+## facet_wrap()
+```{r}
+G <- iris %>% gather(key=variables,value=valor,1:4) %>% 
+  ggplot(aes(x=variables,y=valor,fill=Species,
+             color=Species)) + 
+  geom_boxplot() + scale_fill_brewer(palette = "PuOr")
+
+G + coord_flip() + scale_x_discrete(labels=abbreviate)
+
+G + coord_flip() + scale_x_discrete(labels=abbreviate) +
+  facet_wrap(~Species)
+  
+G + facet_wrap(~Species)
+
+G + coord_flip() + scale_x_discrete(labels=abbreviate) +
+  facet_wrap(~Species, nrow = 3)
+
+G + coord_flip() + scale_x_discrete(labels=abbreviate) +
+  facet_wrap(~Species, ncol = 2)
+```
+
+## facet_grid()
+
+```{r}
+library(dslabs)
+
+gapminder$ferticateg <- cut(gapminder$fertility,
+                            breaks = c(-Inf,2,4,
+                                       6,8,Inf),
+                            labels = c("<2",
+                                       "2-4",
+                                       "4-6",
+                                       "6-8",
+                                       ">8"))
+
+gapminder <- na.omit(gapminder)
+
+X <- gapminder %>% ggplot(aes(x=infant_mortality,
+                              y=life_expectancy,
+                              color=continent))+
+  geom_point()
+
+
+X + facet_grid(.~continent)
+X + facet_grid(continent~.)
+X + facet_grid(.~ferticateg)
+X + facet_grid(ferticateg~.)
+
+X + facet_grid(ferticateg~continent)
+
+## Usando un poco de facet_wrap():
+
+X + facet_wrap(~continent)
+X + facet_wrap(~continent, ncol=5)
+X + facet_wrap(ferticateg~continent,
+               ncol = 3, nrow = 7)
+```
+
+## labs()
+
+```{r}
+J <- G + labs(title="Pétalos por especie",
+              subtitle = "Valores de longitud",
+              x="Características florales",
+              y="Medición (cm)",
+              caption = "Elaborado por:\nBryan Quispe")
+
+# Cambiando el nombre de la leyenda:
+J + labs(fill="Flores",color="Flores") + 
+  scale_fill_brewer(palette="PuOr") +
+  scale_color_brewer(palette="Dark2")
+```
+
+## Usando ggThemeAssist()
+```{r}
+J + theme(plot.subtitle = element_text(size = 12,
+    face = "italic", hjust = 0.5), plot.caption = element_text(size = 14,
+    face = "bold"), panel.grid.major = element_line(colour = "gray30"),
+    panel.grid.minor = element_line(linetype = "blank"),
+    axis.text = element_text(family = "serif",
+        face = "italic"), plot.title = element_text(hjust = 0.5),
+    legend.title = element_text(face = "bold",
+        family = "Helvetica"), 
+    panel.background = element_rect(fill = "palegoldenrod",
+        colour = "gray70"), 
+    plot.background = element_rect(fill = "cornsilk4",
+        colour = "black"), legend.key = element_rect(fill = NA),
+    legend.background = element_rect(fill = NA),
+    legend.position = "top", legend.direction = "horizontal")
+```
+
+## Gráficos de alta calidad
+
+```{r eval=FALSE}
+## png:
+png("msleep.png", res = 600,units = "cm",width = 20,
+    height = 14, bg="black")
+
+M + geom_label_repel(aes(x=sleep_total,y=sleep_rem,
+                         label=vore,fill=vore),alpha=0.25)
+
+dev.off()
+
+## jpeg:
+jpeg("msleep.png", res = 600,units = "cm",width = 20,
+    height = 14, bg="black")
+
+M + geom_label_repel(aes(x=sleep_total,y=sleep_rem,
+                         label=vore,fill=vore),alpha=0.25)
+
+dev.off()
+
+## pdf:
+
+pdf("mypdf.pdf",width = 8,height = 4,bg="white",
+    colormodel = "cmyk",paper = "A4")
+
+M + geom_label_repel(aes(x=sleep_total,y=sleep_rem,
+                         label=vore,fill=vore),alpha=0.25)
+
+dev.off()
+```
+
+## Adición de texto de correlaciones (R y p-value)
+
+```{r}
+df <- read.xlsx("multiplicata_fvs_choice_updated2020.xlsx")
+
+df2 <- df %>% filter(!yr_collected %in% 2007:2009)
+df2 <- df %>% filter(yr_collected %in% 2010:2019)
+
+A <- df2 %>% ggplot(aes(x=svl_hi,y=mass_hi))+
+  geom_point(alpha=0.3,color="coral", size=3)+
+  facet_wrap(~yr_collected,ncol = 2)+
+  labs(x="Longitud Hocico Respiradero (SLV)",
+       y="Condición corporal (mass/SLV",tag = "A") +
+  ggpubr::stat_cor(aes(label=paste(..r.label..,
+                                   ..p.label..,
+                                   sep="~~")),color="black",
+                   geom = "text", label.x = 35,label.y = 20,
+                   size=3.5);A
+```
+
+## Adicionar regresiones con texto:
+
+```{r}
+B <- df2 %>% ggplot(aes(x=svl_hi,y=mass_hi,
+                        color=factor(yr_collected)))+
+  geom_point(alpha=0.3,size=3) + geom_smooth(method = "lm",
+                                             se=FALSE) + 
+  facet_wrap(~yr_collected,ncol = 2) + 
+  labs(x="Longitud Hocico Respiradero (SLV)",
+       y="Condición corporal (mass/SLV",tag = "B") +
+  ggpubr::stat_regline_equation(label.x = 35,label.y = 20,
+                                aes(label=paste(..eq.label..,
+                                                ..adj.rr.label..,
+                                                sep="~~~")));B
+```
+
+## Patchwork: unión de gráficos
+```{r}
+C <- iris %>% ggplot(aes(Petal.Length,Sepal.Length)) + 
+  geom_point()
+
+D <- iris %>% ggplot(aes(Petal.Length,Species)) +
+  geom_boxplot()
+
+# Usando la librería:
+library(patchwork)
+A+B
+A+B+C+D
+A+B|C+D
+A|C|D
+C+D|A
+C/D
+(C+D)/B
+
+#Cambios especiales: operador &
+(C/D|A)&
+  theme(plot.background = 
+          element_rect(fill = "gray90"))
+
+(A|B)&theme(plot.background = 
+              element_rect(fill = "gray90"))
+
+ggpubr::ggarrange(A,B)
+```
+
